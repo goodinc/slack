@@ -23,6 +23,27 @@ type slackPostMessageRes struct {
 	Error string
 }
 
+type Attachment struct {
+	Fallback   string            `json:"fallback"`
+	Color      string            `json:"color,omitempty"`
+	Pretext    string            `json:"pretext,omitempty"`
+	AuthorName string            `json:"author_name,omitempty"`
+	AuthorLink string            `json:"author_link,omitempty"`
+	AuthorIcon string            `json:"author_icon,omitempty"`
+	Title      string            `json:"title,omitempty"`
+	TitleLink  string            `json:"title_link,omitempty"`
+	Text       string            `json:"text,omitempty"`
+	Fields     []AttachmentField `json:"fields,omitempty"`
+	ImageURL   string            `json:"image_url,omitempty"`
+	ThumbURL   string            `json:"thumb_url,omitempty"`
+}
+
+type AttachmentField struct {
+	Title string `json:"title,omitempty"`
+	Value string `json:"value,omitempty"`
+	Short bool   `json:"short,omitempty"`
+}
+
 // Client represents a slack api client. A Client is
 // used for making requests to the slack api.
 type Client struct {
@@ -38,9 +59,9 @@ func NewClient(token, username, icon string) *Client {
 
 // SendMessage sends a text message to a specific channel
 // with a specific username.
-func (c *Client) SendMessage(channel, message string) error {
-	if channel == "" || message == "" {
-		return errors.New("channel and message required")
+func (c *Client) SendMessage(channel, message string, attachments []Attachment) error {
+	if channel == "" {
+		return errors.New("channel required")
 	}
 
 	payload := url.Values{}
@@ -49,6 +70,15 @@ func (c *Client) SendMessage(channel, message string) error {
 	payload.Set("icon_emoji", c.icon)
 	payload.Set("channel", channel)
 	payload.Set("text", message)
+
+	if attachments != nil {
+		d, err := json.Marshal(attachments)
+		if err != nil {
+			return err
+		}
+
+		payload.Set("attachments", string(d))
+	}
 
 	res, err := http.PostForm(fmt.Sprintf("%s/%s", slackAddr, postMessageURI), payload)
 	if err != nil {
