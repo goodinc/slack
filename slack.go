@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 var (
@@ -50,11 +51,18 @@ type Client struct {
 	token    string
 	username string
 	icon     string
+
+	timeout time.Duration
 }
 
-// NewClient returns a Client with the provided api token.
+// NewClient returns a Client with the provided api token
+// default timeout to 10 seconds
 func NewClient(token, username, icon string) *Client {
-	return &Client{token, username, icon}
+	return &Client{token, username, icon, time.Duration(10 * time.Second)}
+}
+
+func (c *Client) SetTimeout(timeout time.Duration) {
+	c.timeout = timeout
 }
 
 // SendMessage sends a text message to a specific channel
@@ -80,7 +88,11 @@ func (c *Client) SendMessage(channel, message string, attachments []Attachment) 
 		payload.Set("attachments", string(d))
 	}
 
-	res, err := http.PostForm(fmt.Sprintf("%s/%s", slackAddr, postMessageURI), payload)
+	client := http.Client{
+		Timeout: time.Duration(c.timeout),
+	}
+
+	res, err := client.PostForm(fmt.Sprintf("%s/%s", slackAddr, postMessageURI), payload)
 	if err != nil {
 		return err
 	}
