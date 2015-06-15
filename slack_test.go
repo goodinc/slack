@@ -83,7 +83,7 @@ func TestSendMessageTimeout(t *testing.T) {
 }
 
 func sendMessageHandlerWait(rw http.ResponseWriter, req *http.Request) {
-	time.Sleep(251 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 	res := &slackPostMessageRes{Ok: true}
 	body, _ := json.Marshal(res)
 	rw.Write(body)
